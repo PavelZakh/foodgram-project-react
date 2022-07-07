@@ -9,18 +9,16 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     '*',
-    '51.250.18.217',
-    '127.0.0.1',
 ]
 
 INSTALLED_APPS = [
+    'foodapi',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'foodapi',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -61,9 +59,9 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', default='my_db'),
-        'USER': os.getenv('POSTGRES_USER', default='hero'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='my_db@123'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('POSTGRES_USER', default='postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
         'HOST': os.getenv('DB_HOST', default='db'),
         'PORT': os.getenv('DB_PORT', default='5432')
     }

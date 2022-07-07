@@ -35,5 +35,6 @@ class Command(BaseCommand):
                         )
                     except IntegrityError:
                         print(f'Ингридиет {ingredient["name"]} уже существует в базе данных!')
+            print('Данные загружены!')
         except FileNotFoundError:
             raise CommandError('Не существует файла для загрузки данных! Проверьте папку data!')

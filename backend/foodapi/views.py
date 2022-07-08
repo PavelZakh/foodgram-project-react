@@ -22,33 +22,51 @@ User = get_user_model()
 class FixedUserViewSet(UserViewSet):
     pagination_class = LimitPageNumberPagination
 
-    @action(detail=True, permission_classes=[IsAuthenticated])
-    def subscribe(self, request, id):
+    @action(detail=True, methods=['delete', 'post'],
+            permission_classes=[IsAuthenticated])
+    def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
         user = request.user
-
-        if author == user:
-            return Response(
-                {'errors': 'Нельзя подписаться на самого себя!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         follow = Follow.objects.filter(user=user, author=author)
-        if follow.exists():
+        if request.method == 'POST':
+
+            if author == user:
+                return Response(
+                    {'errors': 'Нельзя подписаться на самого себя!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if follow.exists():
+                return Response(
+                    {'errors': 'Нельзя подписаться на пользователя дважды!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            follow = Follow.objects.create(user=user, author=author)
+            serializer = FollowSerializer(
+                follow,
+                context={'request': request},
+            )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            if user == author:
+                return Response(
+                    {'errors': 'Нельзя отписаться от самого себя!'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if follow.exists():
+                follow.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
             return Response(
-                {'errors': 'Нельзя подписаться на пользователя дважды!'},
+                {'errors': 'Вы уже отписались'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        follow = Follow.objects.create(user=user, author=author)
-        serializer = FollowSerializer(
-            follow,
-            context={'request': request},
-        )
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         user = request.user
         queryset = Follow.objects.filter(user=user)
@@ -59,27 +77,6 @@ class FixedUserViewSet(UserViewSet):
             context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
-
-    @subscribe.mapping.delete
-    def del_subscribe(self, request, id):
-        author = get_object_or_404(User, id=id)
-        user = request.user
-
-        if user == author:
-            return Response(
-                {'errors': 'Нельзя отписаться от самого себя!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        follow = Follow.objects.filter(user=user, author=author)
-        if follow.exists():
-            follow.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(
-            {'errors': 'Вы уже отписались'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -106,19 +103,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['get', 'delete'],
+    @action(detail=True, methods=['delete', 'post'],
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
-        if request.method == 'GET':
+        if request.method == 'POST':
             return self.add_db_record(request.user, Cart, pk)
         elif request.method == 'DELETE':
             return self.delete_db_record(request.user, Cart, pk)
         return None
 
-    @action(detail=True, methods=['get', 'delete'],
+    @action(detail=True, methods=['delete', 'post'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
-        if request.method == 'GET':
+        if request.method == 'POST':
             return self.add_db_record(request.user, Favorite, pk)
         elif request.method == 'DELETE':
             return self.delete_db_record(request.user, Favorite, pk)

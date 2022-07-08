@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserCreateSerializer, UserSerializer
 
-from .models import (Ingredient, Tag, Recipe,
+from .models import (Ingredient, Tag, Recipe, Favorite,
                      Follow, IngredientsAmount)
 
 User = get_user_model()
@@ -115,16 +115,16 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        user = get_object_or_404(User, id=self.context.get('request').user.id)
-        if not user.is_anonymous:
-            return Recipe.objects.filter(favorites__user=user, author=obj.id).exists()
-        return False
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Recipe.objects.filter(favorites__user=user, id=obj.id).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        user = get_object_or_404(User, id=self.context.get('request').user.id)
-        if not user.is_anonymous:
-            return Recipe.objects.filter(carts__user=user, author=obj.id).exists()
-        return False
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Recipe.objects.filter(cart__user=user, id=obj.id).exists()
 
     def validate(self, data):
         ingredients = self.initial_data.get('ingredients')

@@ -27,7 +27,7 @@ class Tag(models.Model):
         max_length=200,
         verbose_name='Название тэга',
     )
-    hex_color = models.CharField(
+    color = models.CharField(
         max_length=7,
         default="#ffffff",
         verbose_name='Цвет в hex',
@@ -65,6 +65,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
+        through='IngredientsAmount',
         related_name='recipes',
         verbose_name='Ингридиенты',
     )

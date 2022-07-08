@@ -128,26 +128,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         user = request.user
-        if user.carts.exist():
-            ingredients = IngredientsAmount.objects.filter(
-                recipe__in=(user.carts.values('id'))
-            ).values(
-                ingredient=F('ingredients__name'),
-                measurement_unit=F('ingredients__measurement_unit'),
-            ).annotate(amount=Sum('amount'))
-            filename = f'{user.username}_shopping_list.txt'
-            text = f'Список покупок пользваотеля {user.username}:\n'
-            for ingr in ingredients:
-                text += f'{ingr["ingredient"]} {ingr["measurement_unit"]} - {ingr["amount"]}\n'
-            response = HttpResponse(
-                text, content_type='text.txt; charset=utf-8'
-            )
-            response['Content-Disposition'] = f'attachment; filename={filename}'
-            return response
-        return Response(
-            {'errors': 'Нельзя выгрузить пустую корзину!'},
-            status=status.HTTP_400_BAD_REQUEST,
+        ingredients = IngredientsAmount.objects.filter(
+            recipe__in=(user.carts.values('id'))
+        ).values(
+            name=F('ingredient__name'),
+            measurement_unit=F('ingredient__measurement_unit'),
+        ).annotate(amount=Sum('amount'))
+        filename = f'{user.username}_shopping_list.txt'
+        text = f'Список покупок пользователя {user.username}:\n'
+        for ingr in ingredients:
+            text += f'{ingr["name"]} {ingr["measurement_unit"]} - {ingr["amount"]}\n'
+        response = HttpResponse(
+            text, content_type='text.txt; charset=utf-8'
         )
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
 
     def delete_db_record(self, user, model, pk):
         record = model.objects.filter(user=user, recipe__id=pk)

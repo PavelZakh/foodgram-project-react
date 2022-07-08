@@ -21,7 +21,7 @@ services:
       - ./.env
 
   frontend:
-    image: pashazakharov/foodgram_frontend:v2.11.1989
+    image: pashazakharov/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
@@ -40,7 +40,7 @@ services:
       - static_value:/var/html/static/
       - media_value:/var/html/media/
     depends_on:
-      - backend
+      - frontend
 
 volumes:
   postgres_data:

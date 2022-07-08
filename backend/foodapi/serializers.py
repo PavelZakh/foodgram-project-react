@@ -39,7 +39,7 @@ class FixedCreateUserSerializer(UserCreateSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -95,6 +95,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
     )
     ingredients = IngredientsAmountSerializer(
+        source='ingredientsamount_set',
         many=True,
         read_only=True,
     )
@@ -125,10 +126,31 @@ class RecipeSerializer(serializers.ModelSerializer):
             return Recipe.objects.filter(carts__user=user, author=obj.id).exists()
         return False
 
+    def validate(self, data):
+        ingredients = self.initial_data.get('ingredients')
+        if not ingredients:
+            raise serializers.ValidationError({
+                'ingredients': 'Нужен хоть один ингридиент для рецепта'})
+        ingredient_list = []
+        for ingredient_item in ingredients:
+            ingredient = get_object_or_404(Ingredient,
+                                           id=ingredient_item['id'])
+            if ingredient in ingredient_list:
+                raise serializers.ValidationError('Ингридиенты должны '
+                                                  'быть уникальными')
+            ingredient_list.append(ingredient)
+            if int(ingredient_item['amount']) < 0:
+                raise serializers.ValidationError({
+                    'ingredients': ('Убедитесь, что значение количества '
+                                    'ингредиента больше 0')
+                })
+        data['ingredients'] = ingredients
+        return data
+
     def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
 
-        ingredients = validated_data.get('ingredients')
         for ingredient in ingredients:
             IngredientsAmount.objects.create(
                 recipe=recipe,

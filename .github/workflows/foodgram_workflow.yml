@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m flake8 backend
   build_and_push_backend_to_docker_hub:
-    name: Push Docker image to Docker Hub
+    name: Push backend image to Docker Hub
     runs-on: ubuntu-latest
     needs: tests
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
@@ -46,7 +46,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
 
   build_and_push_frontend_to_docker_hub:
-    name: Push Docker image to Docker Hub
+    name: Push frontend image to Docker Hub
     runs-on: ubuntu-latest
     needs: tests
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [
       build_and_push_frontend_to_docker_hub,
-      build_and_push_frontend_to_docker_hub
+      build_and_push_backend_to_docker_hub
     ]
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
     steps:
@@ -81,6 +81,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram_backend

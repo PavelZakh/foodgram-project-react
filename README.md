@@ -78,6 +78,8 @@ sudo docker-compose exec backend python manage.py load_data ingredients.json
 
 ### Об авторе
 
-Захаров Павел Валерьевич
+Захаров Павел Валерьевич 
+
 Студент Яндекс.Практикума по python backend разработке
+
 Telegram - @zkhrv_pash

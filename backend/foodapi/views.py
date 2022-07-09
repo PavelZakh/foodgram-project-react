@@ -14,7 +14,7 @@ from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (TagSerializer, IngredientSerializer,
                           RecipeSerializer, FollowSerializer, ShoppingCartSerializer)
 from .pagination import LimitPageNumberPagination
-from .filters import RecipeFilter, IngredientFilter
+from .filters import IngredientFilter
 
 User = get_user_model()
 
@@ -94,14 +94,43 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.select_related('author')
     serializer_class = RecipeSerializer
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
-    filter_class = RecipeFilter
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def get_queryset(self, *args, **kwargs):
+        queryset = self.queryset
+        tags = self.request.query_params.getlist('tags')
+        if tags:
+            queryset = queryset.filter(
+                tags__slug__in=tags).distinct()
+        author = self.request.query_params.get('author')
+        if author:
+            queryset = queryset.filter(author=author)
+
+        user = self.request.user
+        if user.is_anonymous:
+            return queryset
+
+        is_in_shopping = self.request.query_params.get('is_in_shopping_cart')
+        if is_in_shopping is not None:
+            if is_in_shopping:
+                queryset = queryset.filter(carts__user=user.id)
+            else:
+                queryset = queryset.exclude(carts__user=user.id)
+
+        is_favorited = self.request.query_params.get('is_favorited')
+        if is_favorited is not None:
+            if is_favorited:
+                queryset = queryset.filter(favorites__user=user.id)
+            else:
+                queryset = queryset.exclude(favorites__user=user.id)
+
+        return queryset
 
     @action(detail=True, methods=['delete', 'post'],
             permission_classes=[IsAuthenticated])
@@ -124,17 +153,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        user = request.user
+        user = self.request.user
+        if not user.carts.exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         ingredients = IngredientsAmount.objects.filter(
-            recipe__in=(user.carts.values('id'))
-        ).values(
-            name=F('ingredient__name'),
-            measurement_unit=F('ingredient__measurement_unit'),
+            recipe__carts__user=request.user).values_list(
+            'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(amount=Sum('amount'))
         filename = f'{user.username}_shopping_list.txt'
         text = f'Список покупок пользователя {user.username}:\n'
         for ingr in ingredients:
-            text += f'{ingr["name"]} {ingr["measurement_unit"]} - {ingr["amount"]}\n'
+            text += f'{ingr[0]} {ingr[1]} - {ingr[2]}\n'
         response = HttpResponse(
             text, content_type='text.txt; charset=utf-8'
         )

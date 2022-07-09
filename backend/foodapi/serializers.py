@@ -1,28 +1,28 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
-from .models import (Ingredient, Tag, Recipe, Favorite,
-                     Follow, IngredientsAmount)
+from .models import Ingredient, Tag, Recipe, Follow, IngredientsAmount
 
 User = get_user_model()
 
 
 class FixedUserSerializer(UserSerializer):
     """Сериализатор для модели User."""
-    is_subscribed = serializers.BooleanField(
-        read_only=True,
-    )
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
+        fields = (
+            'email', 'id', 'username',
+            'first_name', 'last_name', 'is_subscribed'
+        )
 
     def get_is_subscribed(self, obj):
-        user = get_object_or_404(User, id=self.context.get('request').user.id)
+        user = self.context.get('request').user
         if not user.is_anonymous:
             return Follow.objects.filter(user=user, author=obj.id).exists()
         return False
@@ -39,7 +39,10 @@ class FixedCreateUserSerializer(UserCreateSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
+        fields = (
+            'email', 'id', 'username',
+            'first_name', 'last_name', 'password'
+        )
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -99,12 +102,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
-    is_favorited = serializers.BooleanField(
-        read_only=True,
-    )
-    is_in_shopping_cart = serializers.BooleanField(
-        read_only=True,
-    )
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField()
 
     class Meta:
@@ -124,7 +123,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
-        return Recipe.objects.filter(cart__user=user, id=obj.id).exists()
+        return Recipe.objects.filter(carts__user=user, id=obj.id).exists()
 
     def validate(self, data):
         ingredients = self.initial_data.get('ingredients')
@@ -221,9 +220,7 @@ class FollowSerializer(serializers.ModelSerializer):
         source='author.last_name',
         read_only=True,
     )
-    is_subscribed = serializers.BooleanField(
-        read_only=True,
-    )
+    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField(
         read_only=True,

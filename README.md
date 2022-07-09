@@ -1,6 +1,6 @@
 ![example workflow](https://github.com/PavelZakh/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
-## Проект Foodgram
+## Проект Foodgram 
 
 Foodgram - продуктовый помощник. С помощью этого веб-сервиса вы сможете составлять свои рецепты, смотреть рецепты других авторов, подписываться на них, а так же составлять свою корзину покупок и скачивать её. Для этого необходимо зарегестрироваться на сервере.
 

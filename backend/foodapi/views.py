@@ -4,7 +4,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
-from django.db.models import F, Sum
+from django.db.models import Sum
 from django.contrib.auth import get_user_model
 from django.http.response import HttpResponse
 
@@ -12,7 +12,8 @@ from .models import (Ingredient, Tag, Recipe, Cart,
                      Favorite, Follow, IngredientsAmount)
 from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import (TagSerializer, IngredientSerializer,
-                          RecipeSerializer, FollowSerializer, ShoppingCartSerializer)
+                          RecipeSerializer, FollowSerializer,
+                          ShoppingCartSerializer)
 from .pagination import LimitPageNumberPagination
 from .filters import IngredientFilter
 
@@ -64,6 +65,10 @@ class FixedUserViewSet(UserViewSet):
                 {'errors': 'Вы уже отписались'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        return Response(
+                    {'errors': 'Нельзя применить данный метод!'},
+                    status=status.HTTP_405_METHOD_NOT_ALLOWED,
+                )
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated])

@@ -15,7 +15,7 @@ from .serializers import (TagSerializer, IngredientSerializer,
                           RecipeSerializer, FollowSerializer,
                           ShoppingCartSerializer)
 from .pagination import LimitPageNumberPagination
-from .filters import IngredientFilter
+from .filters import IngredientFilter, RecipeFilter
 
 User = get_user_model()
 
@@ -94,48 +94,19 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (IngredientFilter,)
+    filterset_class = IngredientFilter
     search_fields = ('^name',)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.select_related('author')
+    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
+    filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def get_queryset(self, *args, **kwargs):
-        queryset = self.queryset
-        tags = self.request.query_params.getlist('tags')
-        if tags:
-            queryset = queryset.filter(
-                tags__slug__in=tags).distinct()
-        author = self.request.query_params.get('author')
-        if author:
-            queryset = queryset.filter(author=author)
-
-        user = self.request.user
-        if user.is_anonymous:
-            return queryset
-
-        is_in_shopping = self.request.query_params.get('is_in_shopping_cart')
-        if is_in_shopping is not None:
-            if is_in_shopping:
-                queryset = queryset.filter(carts__user=user.id)
-            else:
-                queryset = queryset.exclude(carts__user=user.id)
-
-        is_favorited = self.request.query_params.get('is_favorited')
-        if is_favorited is not None:
-            if is_favorited:
-                queryset = queryset.filter(favorites__user=user.id)
-            else:
-                queryset = queryset.exclude(favorites__user=user.id)
-
-        return queryset
 
     @action(detail=True, methods=['delete', 'post'],
             permission_classes=[IsAuthenticated])
@@ -165,7 +136,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ingredients = IngredientsAmount.objects.filter(
             recipe__carts__user=request.user).values_list(
             'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(amount=Sum('amount'))
+        ).annotate(ingr_sum=Sum('amount'))
         filename = f'{user.username}_shopping_list.txt'
         text = f'Список покупок пользователя {user.username}:\n'
         for ingr in ingredients:

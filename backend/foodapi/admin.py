@@ -21,7 +21,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('name',)
 
 
-class MyUserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + ('username', 'email')
 
 
@@ -33,4 +33,4 @@ admin.site.register(Favorite)
 admin.site.register(Follow)
 admin.site.register(IngredientsAmount)
 admin.site.unregister(User)
-admin.site.register(User, MyUserAdmin)
+admin.site.register(User, CustomUserAdmin)

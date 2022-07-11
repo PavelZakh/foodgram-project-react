@@ -9,7 +9,7 @@ SECRET_KEY = os.getenv(
             '^g4jobqyz@d$2ty(4hb=dz1j_866_%t&!'
 )
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '*',

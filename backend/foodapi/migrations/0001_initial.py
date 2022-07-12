@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
                  models.ForeignKey(
                      on_delete=django.db.models.deletion.CASCADE,
                      to='foodapi.ingredient',
-                     verbose_name='Ингридиент')),
+                     verbose_name='Ингредиент')),
             ],
             options={
                 'ordering': ['id'],
@@ -113,7 +113,7 @@ class Migration(migrations.Migration):
                  models.ManyToManyField(related_name='recipes',
                                         through='foodapi.IngredientsAmount',
                                         to='foodapi.ingredient',
-                                        verbose_name='Ингридиенты')),
+                                        verbose_name='Ингредиенты')),
                 ('tags',
                  models.ManyToManyField(related_name='recipes',
                                         to='foodapi.tag',

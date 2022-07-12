@@ -122,14 +122,13 @@ class RecipeSerializer(serializers.ModelSerializer):
             return False
         return Recipe.objects.filter(carts__user=user, id=obj.id).exists()
 
-    def validate(self, data):
-        ingredients = data['ingredientsamount_set']
+    def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError({
-                'ingredients': 'Нужен минимум один ингридиент для рецепта!'})
+                'ingredients': 'Нужен минимум один ингредиент для рецепта!'})
         ingredients_ids = list(map(lambda ingr: ingr['id'], ingredients))
         if len(set(ingredients_ids)) < len(ingredients_ids):
-            raise serializers.ValidationError('Ингридиенты должны '
+            raise serializers.ValidationError('Ингредиенты должны '
                                               'быть уникальными!')
         for ingredient in ingredients:
             if int(ingredient['amount']) < 0:
@@ -137,7 +136,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                     'ingredients': ('Убедитесь, что значение количества '
                                     'ингредиента больше 0!')
                 })
-        return data
+        return ingredients
 
     def ingredients_create(self, ingredients, recipe):
         objects = [

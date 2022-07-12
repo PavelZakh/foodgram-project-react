@@ -71,7 +71,7 @@ class Recipe(models.Model):
         Ingredient,
         through='IngredientsAmount',
         related_name='recipes',
-        verbose_name='Ингридиенты',
+        verbose_name='Ингредиенты',
     )
     tags = models.ManyToManyField(
         Tag,
@@ -150,7 +150,7 @@ class IngredientsAmount(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        verbose_name='Ингридиент',
+        verbose_name='Ингредиент',
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -166,8 +166,8 @@ class IngredientsAmount(models.Model):
 
     class Meta:
         ordering = ['id']
-        verbose_name = 'Количество ингридиента'
-        verbose_name_plural = 'Количество ингридиентов'
+        verbose_name = 'Количество ингредиента'
+        verbose_name_plural = 'Количество ингредиентов'
         constraints = [
             models.UniqueConstraint(
                 fields=['ingredient', 'recipe'],
